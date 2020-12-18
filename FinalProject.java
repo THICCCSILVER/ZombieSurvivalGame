@@ -1,15 +1,13 @@
-
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import java.awt.Toolkit;
-import java.awt.Graphics;
-import java.awt.Color;
-import java.awt.EventQueue;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+
+
 
 public class FinalProject{
 
@@ -19,7 +17,7 @@ public class FinalProject{
     static final int HEIGHT = 600;
     static int tileX = 0;
     static int tileY = 0;
-    static BufferedImage test;
+    static BufferedImage playerImage;
 
     static int[][] map = {{0, 0, 0, 0, 0, 0,0,0},
                           {0, 6, 6, 6, 6, 6,9,0},
@@ -31,19 +29,94 @@ public class FinalProject{
                           {0, 0, 0, 0, 0, 0,0,0}
     };
 
-    static BufferedImage[] tileID = new BufferedImage[10];
 
+    static BufferedImage[] tileID = new BufferedImage[10];
+    static MyKeyListener keyListener = new MyKeyListener();
+
+        // character properties
+ 
+    static final int RUN_SPEED = 10;
+    static final int JUMP_SPEED = -30;
+    static final int GRAVITY = 2;
+    
+    static int ninjaH = 35;
+    static int ninjaW = 35;
+    static int ninjaX = WIDTH/2;
+    static int ninjaY = 96;
+    static int ninjaVx = 0;
+    static int ninjaVy = 0;
+    static int ninjaPicNum = 1;
+    static BufferedImage[] ninjaPic = new BufferedImage[17];
+    static int[] nextLeftPic  = {1, 2, 3, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    static int[] nextRightPic = {5, 5, 5, 5, 5, 6, 7, 8, 5, 5, 5, 5, 5, 5, 5, 5, 5}; 
+    static int[] nextUpPic = {9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 11, 12, 9, 9, 9, 9, 9};
+    static int[] nextDownPic = {13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 14, 15, 16, 13};
+
+    static boolean goingLeft = false;
+    static boolean goingRight = false;
+    static boolean goingUp = false;
+    static boolean goingDown = false;
+
+
+    static int wallH = 32;
+    static int wallW = 32;
+
+    static int playerW = 32;
+    static int playerH = 32;
+
+    static Rectangle playerBox = new Rectangle(ninjaX, ninjaY, ninjaW, ninjaH);
+
+
+
+    static Rectangle[] wallBox;
     
 
-
     public static void main(String[] args){
+
+        int wallCount = 0;
+        int wallBoxCount = 0;
 
         gameWindow = new JFrame("Game Window");
         gameWindow.setSize(WIDTH,HEIGHT);
         gameWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
-        canvas = new GraphicsPanel();        
+        
+        canvas = new GraphicsPanel();   
+        canvas.addKeyListener(keyListener);     
         gameWindow.add(canvas); 
+
+
+
+        for(int i = 0; i < map.length; i++){
+
+            wallCount = wallCount + amountInArray(map[i], 4) + amountInArray(map[i], 5) + amountInArray(map[i], 6) + amountInArray(map[i], 7) + amountInArray(map[i], 8) +  amountInArray(map[i], 9);
+        }
+
+        wallBox = new Rectangle[wallCount];
+
+
+        for(int i = 0; i < map.length; i++){
+
+            for(int count = 0; count < map[0].length; count++){
+                
+                if(map[i][count] == 4 || map[i][count] == 5 || map[i][count] == 6 || map[i][count] == 7 || map[i][count] == 8 || map[i][count] == 9){
+
+                    wallBox[wallBoxCount] = new Rectangle(i*32, count*32, wallH, wallW);
+                    
+                    wallBoxCount++;
+                   
+                    
+                  
+                }
+
+
+            }
+
+
+        }
+       
+
+       
 
         
 
@@ -55,26 +128,59 @@ public class FinalProject{
             catch(IOException ex){}
 
 
-            }
-
-            try{
-               test = ImageIO.read(new File("images/Character" + ".png"));
-            }
-            catch(IOException ex){
-    
-
-
-            }
-
-
-            gameWindow.setVisible(true);
-    
         }
-        
 
+        for (int i=0; i<17; i++){
+            try {             
+                ninjaPic[i] = ImageIO.read(new File("images/ninja" + Integer.toString(i)+ ".png"));
+            } catch (IOException ex){} 
+        }
+
+  
+         gameWindow.setVisible(true);
+         runGameLoop();
+    
+    }
+
+    public static void runGameLoop(){
+
+       while (true) {
+            gameWindow.repaint();
+            try  {Thread.sleep(85);} catch(Exception e){}
+            
+            // move Mario in horizontal direction
+            if(!checkCollision()){
+                ninjaX = ninjaX + ninjaVx;
+                ninjaY = ninjaY + ninjaVy;
+            }
+            // move Mario in vertical direction
+        
+      
+
+            playerBox.setLocation(ninjaX,ninjaY);
+
+   
+            
+            // select ninja's picture   
+            if ((ninjaVy == 0) && (ninjaVx == 0)){
+                ninjaPicNum = 0;
+            } else if (ninjaVx < 0){
+                ninjaPicNum = nextLeftPic[ninjaPicNum]; 
+            } else if (ninjaVx > 0){                    
+                ninjaPicNum = nextRightPic[ninjaPicNum];  
+            } else if (ninjaVy < 0){
+                ninjaPicNum = nextUpPic[ninjaPicNum];
+            } else if (ninjaVy > 0){
+                ninjaPicNum = nextDownPic[ninjaPicNum];
+            }          
+        }
+
+
+
+    }
 
     
-
+        
 
 
 
@@ -96,11 +202,134 @@ public class FinalProject{
                     tileY = count*32;
     
                     g.drawImage(tileID[map[i][count]],tileX, tileY,this);
-                    g.drawImage(test, 32,32,this);
+                    
+
+                
                     
                   
                 }
 
             }
+
+
+            for(int i = 0; i < map.length; i++){
+
+                for(int count = 0; count < map[0].length; count++){
+                
+                    if(map[i][count] == 4 || map[i][count] == 5 || map[i][count] == 6 || map[i][count] == 7 || map[i][count] == 8 || map[i][count] == 9){
+
+                         g.drawRect(i*32,  count*32, wallH, wallW);
+
+                    }
+
+
+                }
+            }
+
+            g.drawImage(ninjaPic[ninjaPicNum],ninjaX,ninjaY,this);
+
+            g.drawRect(ninjaX,ninjaY,ninjaW, ninjaH);
         }
 
+    }
+
+    static class MyKeyListener implements KeyListener{      
+        public void keyPressed(KeyEvent e){
+            int key = e.getKeyCode();
+            if (key == KeyEvent.VK_LEFT ){
+            
+                ninjaVx = -RUN_SPEED;
+                goingLeft = true;
+
+            } else if (key == KeyEvent.VK_RIGHT){
+                ninjaVx = RUN_SPEED;
+                goingRight = true;
+            }
+            if (key == KeyEvent.VK_UP){
+                ninjaVy = -RUN_SPEED;   
+                goingUp = true;    
+            } else if (key == KeyEvent.VK_DOWN){
+                ninjaVy = RUN_SPEED;
+                goingDown = true;
+            }             
+        }
+        public void keyReleased(KeyEvent e){
+            int key = e.getKeyCode();
+            if (key == KeyEvent.VK_LEFT) {
+                ninjaVx = 0;
+                goingLeft = false;
+                if (goingRight){
+                    ninjaVx = RUN_SPEED;
+                }
+            }
+            if (key == KeyEvent.VK_RIGHT) {
+                ninjaVx = 0;
+                goingRight = false;
+                if (goingLeft){
+                    ninjaVx = -RUN_SPEED;
+                }
+            }
+            if (key == KeyEvent.VK_UP) {
+                ninjaVy = 0;
+                goingUp = false;
+                if (goingDown){
+                    if (!(goingRight) && !(goingLeft)){
+                    }
+                    ninjaVy = RUN_SPEED;
+                } 
+            }
+            if (key == KeyEvent.VK_DOWN) {
+                ninjaVy = 0;
+                goingDown = false;
+                if (goingUp){
+                    if (!(goingRight) && !(goingLeft)){
+                    }
+                    ninjaVy = -RUN_SPEED;
+                } 
+            }
+        }       
+        public void keyTyped(KeyEvent e){
+        }        
+    }
+
+       
+
+
+
+
+    public static int amountInArray(int[] array, int value){
+        int count = 0;
+
+        for(int i = 0; i < array.length; i++){
+            
+            if(array[i] == value){
+                count++;
+            }
+
+
+            
+        }
+
+        return count;
+
+
+
+    }
+
+
+    public static boolean checkCollision(){
+
+        for(int i = 0; i < wallBox.length; i++){
+
+            if(wallBox[i].intersects(playerBox)){
+                return true;
+            }
+
+
+        }
+
+        return false;
+    
+    }
+    
+}
