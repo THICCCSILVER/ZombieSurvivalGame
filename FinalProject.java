@@ -19,30 +19,30 @@ public class FinalProject{
     static int tileY = 0;
     static BufferedImage playerImage;
 
-    static int[][] map = {{0, 0, 0, 0, 0, 0,0,0},
-                          {0, 6, 6, 6, 6, 6,9,0},
-                          {0, 4, 3, 2, 1, 2,5,0},
-                          {0, 4, 2, 3, 2, 3,5,0},
-                          {0, 4, 1, 2, 3, 1,5,0},
-                          {0, 4, 2, 1, 2, 2,5,0},
-                          {0, 7, 7, 7, 7, 7,8,0},
-                          {0, 0, 0, 0, 0, 0,0,0}
-    };
+     static int[][] map ={{0, 0, 0, 0, 0, 0,0,0,0,0,0,0,0},
+                          {0, 6, 6, 6, 6, 6,9,0,0,0,0,0,0},
+                          {0, 4, 3, 2, 1, 2,5,0,0,0,0,0,0},
+                          {0, 4, 2, 3, 2, 3,5,0,0,0,0,0,0},
+                          {0, 4, 1, 2, 3, 1,5,0,0,0,0,0,0},
+                          {0, 4, 2, 1, 2, 2,5,0,0,0,0,0,0},
+                          {0, 7, 7, 7, 7, 7,8,0,0,0,0,0,0},
+                          {0, 0, 0, 0, 0, 0,0,0,0,0,0,0,0}
+    };  
 
+    //static int[][] map = new int[64][64];
 
     static BufferedImage[] tileID = new BufferedImage[10];
     static MyKeyListener keyListener = new MyKeyListener();
 
         // character properties
  
-    static final int RUN_SPEED = 10;
-    static final int JUMP_SPEED = -30;
+    static final int RUN_SPEED = 2;
     static final int GRAVITY = 2;
     
     static int ninjaH = 35;
     static int ninjaW = 35;
-    static int ninjaX = WIDTH/2;
-    static int ninjaY = 96;
+    static int ninjaX = 75;
+    static int ninjaY = 75;
     static int ninjaVx = 0;
     static int ninjaVy = 0;
     static int ninjaPicNum = 1;
@@ -56,6 +56,8 @@ public class FinalProject{
     static boolean goingRight = false;
     static boolean goingUp = false;
     static boolean goingDown = false;
+    
+    static String lastMovement = "";
 
 
     static int wallH = 32;
@@ -65,13 +67,25 @@ public class FinalProject{
     static int playerH = 32;
 
     static Rectangle playerBox = new Rectangle(ninjaX, ninjaY, ninjaW, ninjaH);
+    static Rectangle futureLeftHitBox = new Rectangle(ninjaX, ninjaY, ninjaW, ninjaH);
+    static Rectangle futureRightHitBox = new Rectangle(ninjaX, ninjaY, ninjaW, ninjaH);
+    static Rectangle futureUpHitBox = new Rectangle(ninjaX, ninjaY, ninjaW, ninjaH);
+    static Rectangle futureDownHitBox = new Rectangle(ninjaX, ninjaY, ninjaW, ninjaH);
 
 
 
     static Rectangle[] wallBox;
     
+    static double elapsedTimeSentence = 0.0;  
+    static long start = System.currentTimeMillis();
+    static long end = 0;
 
     public static void main(String[] args){
+
+        
+
+
+        
 
         int wallCount = 0;
         int wallBoxCount = 0;
@@ -87,10 +101,14 @@ public class FinalProject{
 
 
 
+
+
         for(int i = 0; i < map.length; i++){
 
             wallCount = wallCount + amountInArray(map[i], 4) + amountInArray(map[i], 5) + amountInArray(map[i], 6) + amountInArray(map[i], 7) + amountInArray(map[i], 8) +  amountInArray(map[i], 9);
         }
+
+        
 
         wallBox = new Rectangle[wallCount];
 
@@ -146,38 +164,60 @@ public class FinalProject{
 
        while (true) {
             gameWindow.repaint();
-            try  {Thread.sleep(85);} catch(Exception e){}
+            try  {Thread.sleep(20);} catch(Exception e){}
             
             // move Mario in horizontal direction
-            if(!checkCollision()){
-                ninjaX = ninjaX + ninjaVx;
-                ninjaY = ninjaY + ninjaVy;
-            }
-            // move Mario in vertical direction
-        
-      
 
+            futureLeftHitBox.setLocation(ninjaX - 2, ninjaY);
+            if ((checkCollision(futureLeftHitBox)) && (goingLeft)){
+                ninjaVx = 0;
+                System.out.print("4");
+            }
+
+            futureRightHitBox.setLocation(ninjaX + 2, ninjaY);
+
+            if ((checkCollision(futureRightHitBox)) && (goingRight)){
+                System.out.print("3");
+                ninjaVx = 0;
+            }
+            
+            futureUpHitBox.setLocation(ninjaX, ninjaY - 2);
+
+            if ((checkCollision(futureUpHitBox)) && (goingUp)){
+                ninjaVy = 0;
+                System.out.print("2");
+            }
+
+            futureDownHitBox.setLocation(ninjaX, ninjaY + 2);
+
+            if ((checkCollision(futureDownHitBox)) && (goingDown)){
+                ninjaVy = 0;
+                System.out.print("2");
+            }
+
+            ninjaX = ninjaX + ninjaVx;
+            ninjaY = ninjaY + ninjaVy;
             playerBox.setLocation(ninjaX,ninjaY);
 
-   
-            
             // select ninja's picture   
-            if ((ninjaVy == 0) && (ninjaVx == 0)){
-                ninjaPicNum = 0;
-            } else if (ninjaVx < 0){
-                ninjaPicNum = nextLeftPic[ninjaPicNum]; 
-            } else if (ninjaVx > 0){                    
-                ninjaPicNum = nextRightPic[ninjaPicNum];  
-            } else if (ninjaVy < 0){
-                ninjaPicNum = nextUpPic[ninjaPicNum];
-            } else if (ninjaVy > 0){
-                ninjaPicNum = nextDownPic[ninjaPicNum];
-            }          
+            if (elapsedTimeSentence/80 > 1){
+                if ((ninjaVy == 0) && (ninjaVx == 0)){
+                    ninjaPicNum = 0;
+                } else if (ninjaVx < 0){
+                    ninjaPicNum = nextLeftPic[ninjaPicNum]; 
+                } else if (ninjaVx > 0){                    
+                    ninjaPicNum = nextRightPic[ninjaPicNum];  
+                } else if (ninjaVy < 0){
+                    ninjaPicNum = nextUpPic[ninjaPicNum];
+                } else if (ninjaVy > 0){
+                    ninjaPicNum = nextDownPic[ninjaPicNum];
+                }    
+                start = System.currentTimeMillis();  
+            }   
+            end = System.currentTimeMillis();
+            elapsedTimeSentence = end - start; 
         }
-
-
-
-    }
+    } // runGameLoop method end
 
     
         
@@ -241,16 +281,24 @@ public class FinalProject{
                 ninjaVx = -RUN_SPEED;
                 goingLeft = true;
 
-            } else if (key == KeyEvent.VK_RIGHT){
+            } 
+            if (key == KeyEvent.VK_RIGHT){
                 ninjaVx = RUN_SPEED;
                 goingRight = true;
+                lastMovement = "right";
+
+
             }
             if (key == KeyEvent.VK_UP){
                 ninjaVy = -RUN_SPEED;   
                 goingUp = true;    
-            } else if (key == KeyEvent.VK_DOWN){
+                lastMovement = "up";
+
+            }
+            if (key == KeyEvent.VK_DOWN){
                 ninjaVy = RUN_SPEED;
                 goingDown = true;
+                lastMovement = "down";
             }             
         }
         public void keyReleased(KeyEvent e){
@@ -273,8 +321,7 @@ public class FinalProject{
                 ninjaVy = 0;
                 goingUp = false;
                 if (goingDown){
-                    if (!(goingRight) && !(goingLeft)){
-                    }
+  
                     ninjaVy = RUN_SPEED;
                 } 
             }
@@ -282,8 +329,7 @@ public class FinalProject{
                 ninjaVy = 0;
                 goingDown = false;
                 if (goingUp){
-                    if (!(goingRight) && !(goingLeft)){
-                    }
+   
                     ninjaVy = -RUN_SPEED;
                 } 
             }
@@ -317,11 +363,11 @@ public class FinalProject{
     }
 
 
-    public static boolean checkCollision(){
+    public static boolean checkCollision(Rectangle collisionObject){
 
         for(int i = 0; i < wallBox.length; i++){
 
-            if(wallBox[i].intersects(playerBox)){
+            if(wallBox[i].intersects(collisionObject)){
                 return true;
             }
 
