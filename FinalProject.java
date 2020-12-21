@@ -6,7 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-
+import java.util.Arrays;
 
 
 public class FinalProject{
@@ -56,9 +56,11 @@ public class FinalProject{
     static boolean goingRight = false;
     static boolean goingUp = false;
     static boolean goingDown = false;
-    
-    static String lastMovement = "";
 
+    static boolean standLeft = false;
+    static boolean standRight = false;
+    static boolean standUp = false;
+    static boolean standDown = false;
 
     static int wallH = 32;
     static int wallW = 32;
@@ -76,10 +78,43 @@ public class FinalProject{
 
     static Rectangle[] wallBox;
     
-    static double elapsedTimeSentence = 0.0;  
+    static double elapsedTimeMario = 0.0;  
     static long start = System.currentTimeMillis();
     static long end = 0;
 
+    static double elapsedTimeBullet = 0.0;  
+    static long startBullet = System.currentTimeMillis();
+    static long endBullet = 0;
+
+    static int numBullets = 40;    
+    static int[] bulletRightX = new int[numBullets];
+    static int[] bulletRightY = new int[numBullets];
+    static Rectangle[] bulletRightHitBox = new Rectangle[numBullets];
+    static boolean[] bulletRightVisible = new boolean[numBullets];
+    static int bulletW = 10;
+    static int bulletH = 6;
+    static int bulletSpeed = 10;
+    static int currentBulletRight = 0;
+
+    static int[] bulletLeftX = new int[numBullets];
+    static int[] bulletLeftY = new int[numBullets];
+    static Rectangle[] bulletLeftHitBox = new Rectangle[numBullets];
+    static boolean[] bulletLeftVisible = new boolean[numBullets];
+    static int currentBulletLeft = 0;
+
+    static int[] bulletUpX = new int[numBullets];
+    static int[] bulletUpY = new int[numBullets];
+    static Rectangle[] bulletUpHitBox = new Rectangle[numBullets];
+    static boolean[] bulletUpVisible = new boolean[numBullets];
+    static int currentBulletUp = 0;
+
+    static int[] bulletDownX = new int[numBullets];
+    static int[] bulletDownY = new int[numBullets];
+    static Rectangle[] bulletDownHitBox = new Rectangle[numBullets];
+    static boolean[] bulletDownVisible = new boolean[numBullets];
+    static int currentBulletDown = 0;
+
+    static boolean shooting = false;
     public static void main(String[] args){
 
         
@@ -154,30 +189,98 @@ public class FinalProject{
             } catch (IOException ex){} 
         }
 
-  
          gameWindow.setVisible(true);
          runGameLoop();
     
     }
 
+    
     public static void runGameLoop(){
 
        while (true) {
             gameWindow.repaint();
-            try  {Thread.sleep(20);} catch(Exception e){}
+            try  {Thread.sleep(15);} catch(Exception e){}
             
             // move Mario in horizontal direction
+            if (elapsedTimeBullet/150 > 1){
+                if ((shooting) && (ninjaVy == 0) && ((ninjaPicNum == 6) || (goingRight))){
+                    bulletRightX[currentBulletRight] = ninjaX + ninjaW/2 - bulletW/2;
+                    bulletRightY[currentBulletRight] = ninjaY + 25;
+                    bulletRightVisible[currentBulletRight] = true;
+                    currentBulletRight = (currentBulletRight + 1)%numBullets;
+                } else if ((shooting) && (ninjaVy == 0) && ((ninjaPicNum == 4) || (goingLeft))){
+                    bulletLeftX[currentBulletLeft] = ninjaX + ninjaW/2 - bulletW/2;
+                    bulletLeftY[currentBulletLeft] = ninjaY + 25;
+                    bulletLeftVisible[currentBulletLeft] = true;
+                    currentBulletLeft = (currentBulletLeft + 1)%numBullets;
+                } else if ((shooting) && (ninjaVx == 0) && ((ninjaPicNum == 0) || (goingDown))){
+                    bulletDownX[currentBulletDown] = ninjaX + ninjaW/2 - bulletW/2;
+                    bulletDownY[currentBulletDown] = ninjaY + 25;
+                    bulletDownVisible[currentBulletDown] = true;
+                    currentBulletDown = (currentBulletDown + 1)%numBullets;
+                } else if ((shooting) && (ninjaVx == 0) && ((ninjaPicNum == 10) || (goingUp))){
+                    bulletUpX[currentBulletUp] = ninjaX + ninjaW/2 - bulletW/2;
+                    bulletUpY[currentBulletUp] = ninjaY + 25;
+                    bulletUpVisible[currentBulletUp] = true;
+                    currentBulletUp = (currentBulletUp + 1)%numBullets;
+                }
+                startBullet = System.currentTimeMillis();  
+            }   
+            endBullet = System.currentTimeMillis();
+            elapsedTimeBullet = endBullet - startBullet; 
+
+            for (int i=0; i<numBullets; i++){
+                if (bulletRightVisible[i]){
+                    bulletRightX[i] = bulletRightX[i] + bulletSpeed;
+                    bulletRightHitBox[i] = new Rectangle(bulletRightX[i], bulletRightY[i], bulletW, bulletH);
+                    if (checkCollision(bulletRightHitBox[i])) {
+                        bulletRightVisible[i] = false;
+                    }
+                }
+                if (bulletLeftVisible[i]){
+                    bulletLeftX[i] = bulletLeftX[i] - bulletSpeed;
+                    bulletLeftHitBox[i] = new Rectangle(bulletLeftX[i], bulletLeftY[i], bulletW, bulletH);
+                    if (checkCollision(bulletLeftHitBox[i])) {
+                        bulletLeftVisible[i] = false;
+                    }
+                }
+                if (bulletDownVisible[i]){
+                    bulletDownY[i] = bulletDownY[i] + bulletSpeed;
+                    bulletDownHitBox[i] = new Rectangle(bulletDownX[i], bulletDownY[i], bulletW, bulletH);
+                    if (checkCollision(bulletDownHitBox[i])) {
+                        bulletDownVisible[i] = false;
+                    }
+                }
+                if (bulletUpVisible[i]){
+                    bulletUpY[i] = bulletUpY[i] - bulletSpeed;
+                    bulletUpHitBox[i] = new Rectangle(bulletUpX[i], bulletUpY[i], bulletW, bulletH);
+                    if (checkCollision(bulletUpHitBox[i])) {
+                        bulletUpVisible[i] = false;
+                    }
+                }
+            }     
+
+            if (goingLeft) {
+                ninjaVx = -RUN_SPEED;
+            } 
+            if (goingRight) {
+                ninjaVx = RUN_SPEED;
+            } 
+            if (goingUp) {
+                ninjaVy = -RUN_SPEED;
+            } 
+            if (goingDown) {
+                ninjaVy = RUN_SPEED;
+            }
 
             futureLeftHitBox.setLocation(ninjaX - 2, ninjaY);
             if ((checkCollision(futureLeftHitBox)) && (goingLeft)){
                 ninjaVx = 0;
-                System.out.print("4");
             }
 
             futureRightHitBox.setLocation(ninjaX + 2, ninjaY);
 
             if ((checkCollision(futureRightHitBox)) && (goingRight)){
-                System.out.print("3");
                 ninjaVx = 0;
             }
             
@@ -185,24 +288,30 @@ public class FinalProject{
 
             if ((checkCollision(futureUpHitBox)) && (goingUp)){
                 ninjaVy = 0;
-                System.out.print("2");
             }
 
             futureDownHitBox.setLocation(ninjaX, ninjaY + 2);
 
             if ((checkCollision(futureDownHitBox)) && (goingDown)){
                 ninjaVy = 0;
-                System.out.print("2");
             }
 
             ninjaX = ninjaX + ninjaVx;
             ninjaY = ninjaY + ninjaVy;
             playerBox.setLocation(ninjaX,ninjaY);
-
+            
             // select ninja's picture   
-            if (elapsedTimeSentence/80 > 1){
-                if ((ninjaVy == 0) && (ninjaVx == 0)){
-                    ninjaPicNum = 0;
+            if (elapsedTimeMario/80 > 1){
+                if ((ninjaVx == 0) && (ninjaVy == 0)){
+                    if (standLeft) {
+                        ninjaPicNum = 4;
+                    } else if (standRight) {
+                        ninjaPicNum = 6;
+                    } else if (standUp) {
+                        ninjaPicNum = 10;
+                    } else if (standDown) {
+                        ninjaPicNum = 0;
+                    } 
                 } else if (ninjaVx < 0){
                     ninjaPicNum = nextLeftPic[ninjaPicNum]; 
                 } else if (ninjaVx > 0){                    
@@ -215,7 +324,7 @@ public class FinalProject{
                 start = System.currentTimeMillis();  
             }   
             end = System.currentTimeMillis();
-            elapsedTimeSentence = end - start; 
+            elapsedTimeMario = end - start; 
         }
     } // runGameLoop method end
 
@@ -233,6 +342,7 @@ public class FinalProject{
 
             
             super.paintComponent(g);
+            g.setColor(Color.red);
 
             for(int i = 0;i < map.length; i++ ){
                 tileX = i*32;
@@ -266,6 +376,20 @@ public class FinalProject{
                 }
             }
 
+            for (int i=0; i<numBullets; i++){
+                if (bulletRightVisible[i]) {
+                    g.fillOval(bulletRightX[i],bulletRightY[i],bulletW,bulletH);
+                }
+                if (bulletLeftVisible[i]) {
+                    g.fillOval(bulletLeftX[i],bulletLeftY[i],bulletW,bulletH);
+                }
+                if (bulletDownVisible[i]) {
+                    g.fillOval(bulletDownX[i],bulletDownY[i],bulletH,bulletW);
+                }
+                if (bulletUpVisible[i]) {
+                    g.fillOval(bulletUpX[i],bulletUpY[i],bulletH,bulletW);
+                }
+            }
             g.drawImage(ninjaPic[ninjaPicNum],ninjaX,ninjaY,this);
 
             g.drawRect(ninjaX,ninjaY,ninjaW, ninjaH);
@@ -277,35 +401,35 @@ public class FinalProject{
         public void keyPressed(KeyEvent e){
             int key = e.getKeyCode();
             if (key == KeyEvent.VK_LEFT ){
-            
-                ninjaVx = -RUN_SPEED;
                 goingLeft = true;
-
-            } 
-            if (key == KeyEvent.VK_RIGHT){
-                ninjaVx = RUN_SPEED;
+                goingRight = false;
+            } else if (key == KeyEvent.VK_RIGHT){
                 goingRight = true;
-                lastMovement = "right";
-
-
-            }
-            if (key == KeyEvent.VK_UP){
-                ninjaVy = -RUN_SPEED;   
-                goingUp = true;    
-                lastMovement = "up";
+                goingLeft = false;
 
             }
-            if (key == KeyEvent.VK_DOWN){
-                ninjaVy = RUN_SPEED;
+            if (key == KeyEvent.VK_UP){ 
+                goingUp = true;   
+                goingDown = false;
+
+            } else if (key == KeyEvent.VK_DOWN){
                 goingDown = true;
-                lastMovement = "down";
-            }             
+                goingUp = false;
+            } 
+            if (key == KeyEvent.VK_SPACE){
+                // assign the coordinates of the top middle point of the ship to the current bulletRight
+                shooting = true;
+            }            
         }
         public void keyReleased(KeyEvent e){
             int key = e.getKeyCode();
             if (key == KeyEvent.VK_LEFT) {
                 ninjaVx = 0;
                 goingLeft = false;
+                standLeft = true;
+                standRight = false;
+                standUp = false;
+                standDown = false;
                 if (goingRight){
                     ninjaVx = RUN_SPEED;
                 }
@@ -313,6 +437,10 @@ public class FinalProject{
             if (key == KeyEvent.VK_RIGHT) {
                 ninjaVx = 0;
                 goingRight = false;
+                standRight = true;
+                standLeft = false;
+                standUp = false;
+                standDown = false;
                 if (goingLeft){
                     ninjaVx = -RUN_SPEED;
                 }
@@ -320,19 +448,29 @@ public class FinalProject{
             if (key == KeyEvent.VK_UP) {
                 ninjaVy = 0;
                 goingUp = false;
+                standUp = true;
+                standRight = false;
+                standLeft = false;
+                standDown = false;
                 if (goingDown){
-  
                     ninjaVy = RUN_SPEED;
                 } 
             }
             if (key == KeyEvent.VK_DOWN) {
                 ninjaVy = 0;
                 goingDown = false;
+                standDown = true;
+                standRight = false;
+                standUp = false;
+                standLeft = false;
                 if (goingUp){
-   
                     ninjaVy = -RUN_SPEED;
                 } 
             }
+            if (key == KeyEvent.VK_SPACE){
+                // assign the coordinates of the top middle point of the ship to the current bulletRight
+                shooting = false;
+            }           
         }       
         public void keyTyped(KeyEvent e){
         }        
