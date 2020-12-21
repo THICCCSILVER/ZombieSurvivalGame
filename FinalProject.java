@@ -29,7 +29,7 @@ public class FinalProject{
                           {0, 0, 0, 0, 0, 0,0,0,0,0,0,0,0}
     };  
 
-    //static int[][] map = new int[64][64];
+    //static int[][] map = new int[64][64];uj
 
     static BufferedImage[] tileID = new BufferedImage[10];
     static MyKeyListener keyListener = new MyKeyListener();
